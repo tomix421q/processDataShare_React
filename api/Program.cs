@@ -1,3 +1,8 @@
+using api.Interfaces.Live;
+using api.Models;
+using api.Repo;
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -5,6 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+
+// INTERFACES IMPLEMENTATION
+builder.Services.AddScoped<IAsqLive, AsqLiveDataRepo>();
 
 var app = builder.Build();
 

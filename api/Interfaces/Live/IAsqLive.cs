@@ -5,6 +5,6 @@ namespace api.Interfaces.Live
 {
     public interface IAsqLive
     {
-        Task<AsqDto> GetLiveData();
+        Task<AsqModel> GetLiveData();
     }
 }

@@ -32,3 +32,4 @@ C:\Users\uzilt001\Desktop\processDataShare\api\obj\Debug\net8.0\api.pdb
 C:\Users\uzilt001\Desktop\processDataShare\api\obj\Debug\net8.0\api.genruntimeconfig.cache
 C:\Users\uzilt001\Desktop\processDataShare\api\obj\Debug\net8.0\ref\api.dll
 C:\Users\uzilt001\Desktop\processDataShare\api\bin\Debug\net8.0\S7.Net.dll
+C:\Users\uzilt001\Desktop\processDataShare\api\obj\Debug\net8.0\api.sourcelink.json

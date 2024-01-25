@@ -2,6 +2,8 @@ using api.Dtos.Asq;
 using api.Models;
 using Microsoft.AspNetCore.Mvc;
 using S7.Net;
+using api.Interfaces.Live;
+
 
 namespace Stackup.Api.Controllers
 {
@@ -10,19 +12,28 @@ namespace Stackup.Api.Controllers
     [ApiController]
     public class AsqController : ControllerBase
     {
+
+
+        private readonly IAsqLive _asqRepo;
+
+        public AsqController(IAsqLive asqRepo)
+        {
+            _asqRepo = asqRepo;
+        }
+
+
         // 
         //________________________Asq_2___________________________
         // 
         [HttpGet]
         [Route("asq2")]
-        public IActionResult Asq2Live()
+        public async Task<IActionResult> Asq2Live()
         {
-            AsqDto Asq2Model = new();
-            var opcConnect = GetLiveData();
-            return Ok(opcConnect);
+            var asq2Data = await _asqRepo.GetLiveData();
+            return Ok(asq2Data);
         }
 
-        
+
 
         // 
         //________________________Asq_3___________________________
