@@ -12,14 +12,13 @@ namespace Stackup.Api.Controllers
     [ApiController]
     public class AsqController : ControllerBase
     {
+        private readonly IAsqLiveDataService _asqLiveDataService;
 
-
-        private readonly IAsqLive _asqRepo;
-
-        public AsqController(IAsqLive asqRepo)
+        public AsqController(IAsqLiveDataService asqLiveDataService)
         {
-            _asqRepo = asqRepo;
+            _asqLiveDataService = asqLiveDataService;
         }
+
 
 
         // 
@@ -27,10 +26,12 @@ namespace Stackup.Api.Controllers
         // 
         [HttpGet]
         [Route("asq2")]
-        public async Task<IActionResult> Asq2Live()
+        public async Task<IActionResult> GetAsq2LiveData()
         {
-            var asq2Data = await _asqRepo.GetLiveData();
-            return Ok(asq2Data);
+            
+            await _asqLiveDataService.SetIpAddress("10.184.159.109");
+            var asqData = await _asqLiveDataService.GetAsqLiveData();
+            return Ok(asqData);
         }
 
 

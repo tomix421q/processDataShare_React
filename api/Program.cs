@@ -1,6 +1,6 @@
 using api.Interfaces.Live;
 using api.Models;
-using api.Repo;
+using api.Repository;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,10 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddScoped<AsqModel>();
 
 // INTERFACES IMPLEMENTATION
-builder.Services.AddScoped<IAsqLive, AsqLiveDataRepo>();
+builder.Services.AddScoped<IAsqLiveDataService, AsqLiveDataRepo>();
 
 var app = builder.Build();
 
