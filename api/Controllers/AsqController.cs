@@ -28,9 +28,17 @@ namespace Stackup.Api.Controllers
         [Route("asq2")]
         public async Task<IActionResult> GetAsq2LiveData()
         {
-            
-            await _asqLiveDataService.SetIpAddress("10.184.159.109");
+            bool tryConnect = await _asqLiveDataService.SetIpAddress("10.184.159.109");
+            var error = await _asqLiveDataService.ConnectionStatus();
+
+            if (tryConnect == false)
+            {
+
+                return NotFound();
+            }
+
             var asqData = await _asqLiveDataService.GetAsqLiveData();
+            asqData.connection = error;
             return Ok(asqData);
         }
 
