@@ -1,5 +1,8 @@
+using api.DbData;
 using api.Interfaces.Live;
 using api.Repository;
+using Microsoft.EntityFrameworkCore;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,9 +13,17 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+//DB IMPLEMENTATION
+builder.Services.AddDbContext<ApplicationDBContext>(option =>
+{
+    option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+
+
 
 // INTERFACES IMPLEMENTATION
 builder.Services.AddScoped<IAsqLiveDataService, AsqLiveDataRepo>();
+builder.Services.AddScoped<IMainLiveDataService, MainLiveDataService>();
 
 var app = builder.Build();
 

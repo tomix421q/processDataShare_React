@@ -4,8 +4,7 @@ namespace api.Interfaces.Live
 {
     public interface IAsqLiveDataService
     {
-        Task<bool> SetIpAddress(string ipAddress);
-        Task<string> ConnectionStatus();
+        Task<(bool success, string errorMessage)> SetIpAddress(string ipAddress);
         Task<AsqModel> GetAsqLiveData();
     }
 }

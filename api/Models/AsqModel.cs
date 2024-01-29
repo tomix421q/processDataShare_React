@@ -2,6 +2,7 @@ namespace api.Models
 {
     public class AsqModel
     {
+        public int Id { get; set; }
         //ROB1 
         public int ROB1_Downtime_Time { get; set; }
         public int ROB1_FormNumber { get; set; }
