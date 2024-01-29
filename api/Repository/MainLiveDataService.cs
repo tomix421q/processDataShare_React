@@ -119,7 +119,7 @@ namespace api.Repository
             {
                 using (var plc = new Plc(CpuType.S71500, ipAddress, 0, 1))
                 {
-                    var timeoutTask = Task.Delay(3000);
+                    var timeoutTask = Task.Delay(6000);
                     var openTask = plc.OpenAsync();
                     await Task.WhenAny(openTask, timeoutTask);
                     if (plc.IsConnected && openTask.IsCompleted)

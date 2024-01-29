@@ -20,7 +20,7 @@ namespace api.Repository
             {
                 using (var plc = new Plc(CpuType.S71500, _ipAddress, 0, 1))
                 {
-                    plc.Open();//Connect [maybe out]
+                    plc.Open();
                     if (plc.IsConnected)
                     {
                         asqModel.connection = "Connection OK";

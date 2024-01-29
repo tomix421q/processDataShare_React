@@ -22,8 +22,9 @@ builder.Services.AddDbContext<ApplicationDBContext>(option =>
 
 
 // INTERFACES IMPLEMENTATION
-builder.Services.AddScoped<IAsqLiveDataService, AsqLiveDataRepo>();
 builder.Services.AddScoped<IMainLiveDataService, MainLiveDataService>();
+builder.Services.AddScoped<IAsqLiveDataService, AsqLiveDataRepo>();
+builder.Services.AddScoped<IEqcLiveDataService, EqcLiveDataRepo>();
 
 var app = builder.Build();
 
