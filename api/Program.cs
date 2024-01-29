@@ -1,9 +1,9 @@
 using api.DbData;
-using api.Interfaces.CollectToDb;
 using api.Interfaces.Live;
 using api.Repository;
-using api.ServicesWorkers;
 using Microsoft.EntityFrameworkCore;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,8 +12,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddHostedService<AsqCollectorDb>();
-
 
 //DB IMPLEMENTATION
 builder.Services.AddDbContext<ApplicationDBContext>(option =>
@@ -22,17 +20,11 @@ builder.Services.AddDbContext<ApplicationDBContext>(option =>
 });
 
 
-// 
+
 // INTERFACES IMPLEMENTATION
-// 
-//Live interfaces
 builder.Services.AddScoped<IMainLiveDataService, MainLiveDataService>();
 builder.Services.AddScoped<IAsqLiveDataService, AsqLiveDataRepo>();
 builder.Services.AddScoped<IEqcLiveDataService, EqcLiveDataRepo>();
-//Db interfaces
-builder.Services.AddTransient<IAsqDataDb, AsqDbDataRepo>();
-
-
 
 var app = builder.Build();
 
@@ -42,8 +34,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-
 
 app.UseHttpsRedirection();
 app.MapControllers();
