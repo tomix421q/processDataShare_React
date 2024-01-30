@@ -6,6 +6,6 @@ namespace api.Interfaces.CollectToDb
     {
         Task<(bool success, string errorMessage)> SetIpAddress(string ipAddress);
         Task<AsqModel> GetAsqLiveData();
-        Task StartAsync();
+
     }
 }

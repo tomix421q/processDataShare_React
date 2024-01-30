@@ -15,45 +15,7 @@ namespace api.Repository
             _context = context;
             _logger = logger;
         }
-
-
         private string _ipAddress;
-
-        public async Task StartAsync()
-        {
-            while (true)
-            {
-                try
-                {
-                    string ipAddress = "10.184.159.109";
-                    var (success, errorMessage) = await this.SetIpAddress(ipAddress);
-
-                    if (!success)
-                    {
-                        _logger.LogError($"Error setting IP address: {errorMessage}");
-                    }
-                    else
-                    {
-                        var asqData = await this.GetAsqLiveData();
-
-                        // Uložení dat do databáze
-                        // ...
-                        await _context.AsqDatas.AddAsync(asqData);
-                        await _context.SaveChangesAsync();
-                        _logger.LogInformation("Data collected and saved successfully.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Error collecting and saving data: {ex.Message}");
-                }
-
-                // Pauza mezi opakováními (např. každých 5 sekund)
-                await Task.Delay(TimeSpan.FromSeconds(5));
-            }
-        }
-
-
 
         public async Task<AsqModel> GetAsqLiveData()
         {
@@ -92,11 +54,18 @@ namespace api.Repository
                     {
                         asqModel.connection = "Error: Unable to connect to PLC";
                     }
+
+
+                    await _context.AsqDatas.AddAsync(asqModel);
+                    await _context.SaveChangesAsync();
+
                 }
             }
             catch (Exception ex)
             {
                 asqModel.connection = $"Error: {ex.Message}";
+                await _context.AsqDatas.AddAsync(asqModel);
+                await _context.SaveChangesAsync();
             }
 
             return asqModel;

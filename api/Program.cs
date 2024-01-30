@@ -2,7 +2,7 @@ using api.DbData;
 using api.Interfaces.CollectToDb;
 using api.Interfaces.Live;
 using api.Repository;
-using api.Services;
+using api.ServicesWorkers;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHostedService<AsqCollectorDb>();
+
 
 //DB IMPLEMENTATION
 builder.Services.AddDbContext<ApplicationDBContext>(option =>
@@ -28,8 +30,8 @@ builder.Services.AddScoped<IMainLiveDataService, MainLiveDataService>();
 builder.Services.AddScoped<IAsqLiveDataService, AsqLiveDataRepo>();
 builder.Services.AddScoped<IEqcLiveDataService, EqcLiveDataRepo>();
 //Db interfaces
-builder.Services.AddScoped<IAsqDataDb, AsqDbDataRepo>();
-// builder.Services.AddScoped<AsqCollectorDb>();
+builder.Services.AddTransient<IAsqDataDb, AsqDbDataRepo>();
+
 
 
 var app = builder.Build();
@@ -41,9 +43,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Získání služby a spuštění metody StartAsync
-var collectorService = app.Services.GetRequiredService<AsqCollectorDb>();
-// collectorService.Start();
+
 
 app.UseHttpsRedirection();
 app.MapControllers();
