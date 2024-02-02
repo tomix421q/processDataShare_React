@@ -11,7 +11,7 @@ namespace api.DbData
         }
 
         public DbSet<AsqModel> AsqDatas { get; set; }
-
+        public DbSet<EqcModel> EqcDatas { get; set; }
     }
 
 }

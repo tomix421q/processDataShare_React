@@ -29,6 +29,7 @@ builder.Services.AddDbContext<ApplicationDBContext>(option =>
 builder.Services.AddScoped<IMainLiveDataService, MainLiveDataService>();
 builder.Services.AddScoped<IAsqLiveDataService, AsqLiveDataRepo>();
 builder.Services.AddScoped<IEqcLiveDataService, EqcLiveDataRepo>();
+builder.Services.AddScoped<IOpelLiveDataService, OpelLiveDataRepo>();
 //Db interfaces
 builder.Services.AddTransient<IAsqDataDb, AsqDbDataRepo>();
 

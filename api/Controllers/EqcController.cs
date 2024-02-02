@@ -5,7 +5,7 @@ namespace api.Controllers
 {
     [Route("api/eqcmachines")]
     [ApiController]
-    public class EqcController : Controller
+    public class EqcController : ControllerBase
     {
         private readonly IEqcLiveDataService _eqcLiveDataService;
 

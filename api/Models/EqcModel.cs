@@ -2,9 +2,9 @@ namespace api.Models
 {
     public class EqcModel
     {
-        public string connection { get; set; }
+        public string? connection { get; set; }
         public short actualDowntime { get; set; }
-        public string ActualToolName { get; set; }
+        public string? ActualToolName { get; set; }
         //Basic Info
         public bool MachineAuto { get; set; }
         public bool ConveyorOK { get; set; }

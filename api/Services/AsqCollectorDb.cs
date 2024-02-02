@@ -17,9 +17,6 @@ namespace api.ServicesWorkers
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Service started");
-
-
-
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
@@ -36,7 +33,7 @@ namespace api.ServicesWorkers
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var asqDataDb = scope.ServiceProvider.GetRequiredService<IAsqDataDb>();
-                    var (success, errorMessage) = await asqDataDb.SetIpAddress("10.184.159.109");
+                    var (success, errorMessage) = await asqDataDb.SetIpAddress("10.184.159.173");
                     if (success)
                     {
                         await asqDataDb.GetAsqLiveData();

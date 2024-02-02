@@ -24,7 +24,7 @@ namespace api.Repository
                     {
                         eqcModel.connection = "Connection OK";
 
-                        eqcModel.actualDowntime = ((ushort)plc.Read("DB189.DBW0.0")).ConvertToShort();
+                        eqcModel.actualDowntime = ((ushort)await plc.ReadAsync("DB189.DBW0.0")).ConvertToShort();
                         eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
 
                         int startAdress = 258; // Adresa UDT
@@ -97,7 +97,7 @@ namespace api.Repository
                     await plc.OpenAsync();
                     if (plc.IsConnected)
                     {
-                        return (true, "Connection OK"); 
+                        return (true, "Connection OK");
                     }
                     else
                     {
