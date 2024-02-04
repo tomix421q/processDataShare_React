@@ -33,10 +33,11 @@ namespace api.ServicesWorkers
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var asqDataDb = scope.ServiceProvider.GetRequiredService<IAsqDataDb>();
-                    var (success, errorMessage) = await asqDataDb.SetIpAddress("10.184.159.173");
-                    if (success)
+                    var (success_asq2, errorMessage_asq2) = await asqDataDb.SetIpAddress_asq2("10.184.159.173");
+                    var (success_asq3, errorMessage_asq3) = await asqDataDb.SetIpAddress_asq3("10.184.159.174");
+                    if (success_asq2)
                     {
-                        await asqDataDb.GetAsqLiveData();
+                        //await asqDataDb.GetAsqLiveData();
                         _logger.LogInformation("Database shot at : {time}", DateTimeOffset.Now);
                     }
                 }

@@ -2,6 +2,9 @@ using api.DbData;
 using api.Interfaces.CollectToDb;
 using api.Interfaces.Live;
 using api.Repository;
+using api.Repository.DataToDb;
+using api.Repository.DataToDB;
+using api.Services;
 using api.ServicesWorkers;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +16,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHostedService<AsqCollectorDb>();
+builder.Services.AddHostedService<EqcCollectorDb>();
+
 
 
 //DB IMPLEMENTATION
@@ -31,7 +36,9 @@ builder.Services.AddScoped<IAsqLiveDataService, AsqLiveDataRepo>();
 builder.Services.AddScoped<IEqcLiveDataService, EqcLiveDataRepo>();
 builder.Services.AddScoped<IOpelLiveDataService, OpelLiveDataRepo>();
 //Db interfaces
-builder.Services.AddTransient<IAsqDataDb, AsqDbDataRepo>();
+// builder.Services.AddTransient<IAsqDataDb, AsqDbDataRepo>();
+builder.Services.AddTransient<IEqcDataDb, EqcDbDataRepo>();
+
 
 
 
