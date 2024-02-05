@@ -36,7 +36,7 @@ builder.Services.AddScoped<IAsqLiveDataService, AsqLiveDataRepo>();
 builder.Services.AddScoped<IEqcLiveDataService, EqcLiveDataRepo>();
 builder.Services.AddScoped<IOpelLiveDataService, OpelLiveDataRepo>();
 //Db interfaces
-// builder.Services.AddTransient<IAsqDataDb, AsqDbDataRepo>();
+builder.Services.AddTransient<IAsqDataDb, AsqDbDataRepo>();
 builder.Services.AddTransient<IEqcDataDb, EqcDbDataRepo>();
 
 

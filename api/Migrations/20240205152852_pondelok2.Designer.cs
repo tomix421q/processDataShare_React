@@ -11,8 +11,8 @@ using api.DbData;
 namespace api.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20240202114358_init2")]
-    partial class init2
+    [Migration("20240205152852_pondelok2")]
+    partial class pondelok2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -89,7 +89,7 @@ namespace api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AsqDatas");
+                    b.ToTable("AsqModel");
                 });
 
             modelBuilder.Entity("api.Models.EqcModel", b =>
@@ -195,7 +195,7 @@ namespace api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("EqcDatas");
+                    b.ToTable("EqcModel");
                 });
 #pragma warning restore 612, 618
         }
