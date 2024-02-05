@@ -114,7 +114,6 @@ namespace api.Repository
         {
             PlcResult result = new PlcResult();
 
-
             try
             {
                 using (var plc = new Plc(CpuType.S71500, ipAddress, 0, 1))

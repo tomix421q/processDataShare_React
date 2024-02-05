@@ -19,13 +19,11 @@ builder.Services.AddHostedService<AsqCollectorDb>();
 builder.Services.AddHostedService<EqcCollectorDb>();
 
 
-
 //DB IMPLEMENTATION
 builder.Services.AddDbContext<ApplicationDBContext>(option =>
 {
     option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
-
 
 // 
 // INTERFACES IMPLEMENTATION
@@ -38,8 +36,6 @@ builder.Services.AddScoped<IOpelLiveDataService, OpelLiveDataRepo>();
 //Db interfaces
 builder.Services.AddTransient<IAsqDataDb, AsqDbDataRepo>();
 builder.Services.AddTransient<IEqcDataDb, EqcDbDataRepo>();
-
-
 
 
 var app = builder.Build();

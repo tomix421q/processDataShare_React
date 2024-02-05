@@ -1,4 +1,6 @@
 using api.Models;
+using api.Models.databaseModels.ASQ;
+using api.Models.databaseModels.EQC;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.DbData
@@ -10,20 +12,20 @@ namespace api.DbData
 
         }
         // ASQ
-        public DbSet<AsqModel> AsqDatas_asq2 { get; set; }
-        public DbSet<AsqModel> AsqDatas_asq3 { get; set; }
-        public DbSet<AsqModel> AsqDatas_asq4 { get; set; }
-        public DbSet<AsqModel> AsqDatas_asq5 { get; set; }
-        public DbSet<AsqModel> AsqDatas_asq6 { get; set; }
+        public DbSet<Db_asq2Model> AsqDatas_asq2 { get; set; }
+        public DbSet<Db_asq3Model> AsqDatas_asq3 { get; set; }
+        public DbSet<Db_asq4Model> AsqDatas_asq4 { get; set; }
+        public DbSet<Db_asq5Model> AsqDatas_asq5 { get; set; }
+        public DbSet<Db_asq6Model> AsqDatas_asq6 { get; set; }
         // EQC
-        public DbSet<EqcModel> EqcDatas_eqc1 { get; set; }
-        public DbSet<EqcModel> EqcDatas_eqc2 { get; set; }
-        public DbSet<EqcModel> EqcDatas_eqc3 { get; set; }
-        public DbSet<EqcModel> EqcDatas_eqc4 { get; set; }
-        public DbSet<EqcModel> EqcDatas_eqc5 { get; set; }
-        public DbSet<EqcModel> EqcDatas_eqc6 { get; set; }
-        public DbSet<EqcModel> EqcDatas_eqc7 { get; set; }
-        public DbSet<EqcModel> EqcDatas_eqc8 { get; set; }
+        public DbSet<Db_eqc1Model> EqcDatas_eqc1 { get; set; }
+        public DbSet<Db_eqc2Model> EqcDatas_eqc2 { get; set; }
+        public DbSet<Db_eqc3Model> EqcDatas_eqc3 { get; set; }
+        public DbSet<Db_eqc4Model> EqcDatas_eqc4 { get; set; }
+        public DbSet<Db_eqc5Model> EqcDatas_eqc5 { get; set; }
+        public DbSet<Db_eqc6Model> EqcDatas_eqc6 { get; set; }
+        public DbSet<Db_eqc7Model> EqcDatas_eqc7 { get; set; }
+        public DbSet<Db_eqc8Model> EqcDatas_eqc8 { get; set; }
     }
 
 }

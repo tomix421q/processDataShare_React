@@ -1,6 +1,6 @@
 using api.DbData;
 using api.Interfaces.CollectToDb;
-using api.Models;
+using api.Models.databaseModels.EQC;
 using S7.Net;
 
 namespace api.Repository.DataToDb
@@ -28,9 +28,9 @@ namespace api.Repository.DataToDb
         // 
         // DATA
         // 
-        public async Task<EqcModel> GetLiveDataToDb_eqc1()
+        public async Task<Db_eqc1Model> GetLiveDataToDb_eqc1()
         {
-            var eqcModel = new EqcModel();
+            var eqcModel = new Db_eqc1Model();
             try
             {
                 using (var plc = new Plc(CpuType.S71500, _ipAddress_eqc1, 0, 1))
@@ -38,60 +38,53 @@ namespace api.Repository.DataToDb
                     plc.Open();
                     if (plc.IsConnected)
                     {
+                        //actuall time
+                        DateTime currentDate = DateTime.Now;
+                        string formattedDate = currentDate.ToString("dd.MM.yyyy");
+
+                        eqcModel.connection = formattedDate; //shot actual time
+                        eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
+
+                        int startAdress = 258; // Adresa UDT
+                        int sizeInBytes = 78; // Veľkosť UDT v bajtoch
+                        int numberDB = 189; // Cislo DB blocku v plc
+
+                        //Scan multiply
+                        var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
+                        //basic info
+                        eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
+                        eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
+                        eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
+                        //tool
+                        eqcModel.HeaterOk = udtData[12].SelectBit(1);
+                        eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
+                        //bluemelt gluestation
+                        eqcModel.BluemeltOk = udtData[17].SelectBit(0);
+                        eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
+
+                        eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
+                        eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
+
+                        eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
+                        eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
+
+                        eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
+
+                        eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
+                        eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
+                        eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
+                        //Robot
+                        eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
+                        eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
+
+                        // WRITE TO DB
                         if (eqcModel.MainStepNumber == 15)
                         {
-                            //actuall time
-                            DateTime currentDate = DateTime.Now;
-                            string formattedDate = currentDate.ToString("dd.MM.yyyy");
-
-                            eqcModel.connection = formattedDate; //shot actual time
-                            eqcModel.actualDowntime = ((ushort)await plc.ReadAsync("DB189.DBW0.0")).ConvertToShort();
-                            eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
-
-                            int startAdress = 258; // Adresa UDT
-                            int sizeInBytes = 78; // Veľkosť UDT v bajtoch
-                            int numberDB = 189; // Cislo DB blocku v plc
-
-                            //Scan multiply
-                            var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
-                            //basic info
-                            eqcModel.MachineAuto = udtData[0].SelectBit(0);
-                            eqcModel.ConveyorOK = udtData[0].SelectBit(1);
-                            eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
-                            eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
-                            eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
-                            //tool
-                            eqcModel.ToolHome = udtData[12].SelectBit(0);
-                            eqcModel.HeaterOk = udtData[12].SelectBit(1);
-                            eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
-                            //bluemelt gluestation
-                            eqcModel.BluemeltOk = udtData[17].SelectBit(0);
-                            eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
-
-                            eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
-                            eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
-
-                            eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
-                            eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
-
-                            eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
-
-                            eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
-                            eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
-                            eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
-                            //Robot
-                            eqcModel.RobotAutomaticMode = udtData[74].SelectBit(0);
-                            eqcModel.RobotRunning = udtData[74].SelectBit(1);
-                            eqcModel.RobotHome = udtData[74].SelectBit(2);
-                            eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
-                            eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
-
-                            // WRITE TO DB
                             await _context.EqcDatas_eqc1.AddAsync(eqcModel);
                             await _context.SaveChangesAsync();
                         }
@@ -110,9 +103,9 @@ namespace api.Repository.DataToDb
             return eqcModel;
         }
 
-        public async Task<EqcModel> GetLiveDataToDb_eqc2()
+        public async Task<Db_eqc2Model> GetLiveDataToDb_eqc2()
         {
-            var eqcModel = new EqcModel();
+            var eqcModel = new Db_eqc2Model();
             try
             {
                 using (var plc = new Plc(CpuType.S71500, _ipAddress_eqc2, 0, 1))
@@ -120,60 +113,53 @@ namespace api.Repository.DataToDb
                     plc.Open();
                     if (plc.IsConnected)
                     {
+                        //actuall time
+                        DateTime currentDate = DateTime.Now;
+                        string formattedDate = currentDate.ToString("dd.MM.yyyy");
+
+                        eqcModel.connection = formattedDate; //shot actual time
+                        eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
+
+                        int startAdress = 258; // Adresa UDT
+                        int sizeInBytes = 78; // Veľkosť UDT v bajtoch
+                        int numberDB = 189; // Cislo DB blocku v plc
+
+                        //Scan multiply
+                        var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
+                        //basic info
+                        eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
+                        eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
+                        eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
+                        //tool
+                        eqcModel.HeaterOk = udtData[12].SelectBit(1);
+                        eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
+                        //bluemelt gluestation
+                        eqcModel.BluemeltOk = udtData[17].SelectBit(0);
+                        eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
+
+                        eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
+                        eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
+
+                        eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
+                        eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
+
+                        eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
+
+                        eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
+                        eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
+                        eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
+                        //Robot
+                        eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
+                        eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
+
+                        // WRITE TO DB
                         if (eqcModel.MainStepNumber == 15)
                         {
-                            //actuall time
-                            DateTime currentDate = DateTime.Now;
-                            string formattedDate = currentDate.ToString("dd.MM.yyyy");
-
-                            eqcModel.connection = formattedDate; //shot actual time
-                            eqcModel.actualDowntime = ((ushort)await plc.ReadAsync("DB189.DBW0.0")).ConvertToShort();
-                            eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
-
-                            int startAdress = 258; // Adresa UDT
-                            int sizeInBytes = 78; // Veľkosť UDT v bajtoch
-                            int numberDB = 189; // Cislo DB blocku v plc
-
-                            //Scan multiply
-                            var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
-                            //basic info
-                            eqcModel.MachineAuto = udtData[0].SelectBit(0);
-                            eqcModel.ConveyorOK = udtData[0].SelectBit(1);
-                            eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
-                            eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
-                            eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
-                            //tool
-                            eqcModel.ToolHome = udtData[12].SelectBit(0);
-                            eqcModel.HeaterOk = udtData[12].SelectBit(1);
-                            eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
-                            //bluemelt gluestation
-                            eqcModel.BluemeltOk = udtData[17].SelectBit(0);
-                            eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
-
-                            eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
-                            eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
-
-                            eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
-                            eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
-
-                            eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
-
-                            eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
-                            eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
-                            eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
-                            //Robot
-                            eqcModel.RobotAutomaticMode = udtData[74].SelectBit(0);
-                            eqcModel.RobotRunning = udtData[74].SelectBit(1);
-                            eqcModel.RobotHome = udtData[74].SelectBit(2);
-                            eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
-                            eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
-
-                            // WRITE TO DB
                             await _context.EqcDatas_eqc2.AddAsync(eqcModel);
                             await _context.SaveChangesAsync();
                         }
@@ -192,9 +178,9 @@ namespace api.Repository.DataToDb
             return eqcModel;
         }
 
-        public async Task<EqcModel> GetLiveDataToDb_eqc3()
+        public async Task<Db_eqc3Model> GetLiveDataToDb_eqc3()
         {
-            var eqcModel = new EqcModel();
+            var eqcModel = new Db_eqc3Model();
             try
             {
                 using (var plc = new Plc(CpuType.S71500, _ipAddress_eqc3, 0, 1))
@@ -202,60 +188,53 @@ namespace api.Repository.DataToDb
                     plc.Open();
                     if (plc.IsConnected)
                     {
+                        //actuall time
+                        DateTime currentDate = DateTime.Now;
+                        string formattedDate = currentDate.ToString("dd.MM.yyyy");
+
+                        eqcModel.connection = formattedDate; //shot actual time
+                        eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
+
+                        int startAdress = 258; // Adresa UDT
+                        int sizeInBytes = 78; // Veľkosť UDT v bajtoch
+                        int numberDB = 189; // Cislo DB blocku v plc
+
+                        //Scan multiply
+                        var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
+                        //basic info
+                        eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
+                        eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
+                        eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
+                        //tool
+                        eqcModel.HeaterOk = udtData[12].SelectBit(1);
+                        eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
+                        //bluemelt gluestation
+                        eqcModel.BluemeltOk = udtData[17].SelectBit(0);
+                        eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
+
+                        eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
+                        eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
+
+                        eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
+                        eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
+
+                        eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
+
+                        eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
+                        eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
+                        eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
+                        //Robot
+                        eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
+                        eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
+
+                        // WRITE TO DB
                         if (eqcModel.MainStepNumber == 15)
                         {
-                            //actuall time
-                            DateTime currentDate = DateTime.Now;
-                            string formattedDate = currentDate.ToString("dd.MM.yyyy");
-
-                            eqcModel.connection = formattedDate; //shot actual time
-                            eqcModel.actualDowntime = ((ushort)await plc.ReadAsync("DB189.DBW0.0")).ConvertToShort();
-                            eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
-
-                            int startAdress = 258; // Adresa UDT
-                            int sizeInBytes = 78; // Veľkosť UDT v bajtoch
-                            int numberDB = 189; // Cislo DB blocku v plc
-
-                            //Scan multiply
-                            var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
-                            //basic info
-                            eqcModel.MachineAuto = udtData[0].SelectBit(0);
-                            eqcModel.ConveyorOK = udtData[0].SelectBit(1);
-                            eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
-                            eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
-                            eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
-                            //tool
-                            eqcModel.ToolHome = udtData[12].SelectBit(0);
-                            eqcModel.HeaterOk = udtData[12].SelectBit(1);
-                            eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
-                            //bluemelt gluestation
-                            eqcModel.BluemeltOk = udtData[17].SelectBit(0);
-                            eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
-
-                            eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
-                            eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
-
-                            eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
-                            eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
-
-                            eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
-
-                            eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
-                            eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
-                            eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
-                            //Robot
-                            eqcModel.RobotAutomaticMode = udtData[74].SelectBit(0);
-                            eqcModel.RobotRunning = udtData[74].SelectBit(1);
-                            eqcModel.RobotHome = udtData[74].SelectBit(2);
-                            eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
-                            eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
-
-                            // WRITE TO DB
                             await _context.EqcDatas_eqc3.AddAsync(eqcModel);
                             await _context.SaveChangesAsync();
                         }
@@ -274,9 +253,9 @@ namespace api.Repository.DataToDb
             return eqcModel;
         }
 
-        public async Task<EqcModel> GetLiveDataToDb_eqc4()
+        public async Task<Db_eqc4Model> GetLiveDataToDb_eqc4()
         {
-            var eqcModel = new EqcModel();
+            var eqcModel = new Db_eqc4Model();
             try
             {
                 using (var plc = new Plc(CpuType.S71500, _ipAddress_eqc4, 0, 1))
@@ -284,60 +263,53 @@ namespace api.Repository.DataToDb
                     plc.Open();
                     if (plc.IsConnected)
                     {
+                        //actuall time
+                        DateTime currentDate = DateTime.Now;
+                        string formattedDate = currentDate.ToString("dd.MM.yyyy");
+
+                        eqcModel.connection = formattedDate; //shot actual time
+                        eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
+
+                        int startAdress = 258; // Adresa UDT
+                        int sizeInBytes = 78; // Veľkosť UDT v bajtoch
+                        int numberDB = 189; // Cislo DB blocku v plc
+
+                        //Scan multiply
+                        var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
+                        //basic info
+                        eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
+                        eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
+                        eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
+                        //tool
+                        eqcModel.HeaterOk = udtData[12].SelectBit(1);
+                        eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
+                        //bluemelt gluestation
+                        eqcModel.BluemeltOk = udtData[17].SelectBit(0);
+                        eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
+
+                        eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
+                        eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
+
+                        eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
+                        eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
+
+                        eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
+
+                        eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
+                        eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
+                        eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
+                        //Robot
+                        eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
+                        eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
+
+                        // WRITE TO DB
                         if (eqcModel.MainStepNumber == 15)
                         {
-                            //actuall time
-                            DateTime currentDate = DateTime.Now;
-                            string formattedDate = currentDate.ToString("dd.MM.yyyy");
-
-                            eqcModel.connection = formattedDate; //shot actual time
-                            eqcModel.actualDowntime = ((ushort)await plc.ReadAsync("DB189.DBW0.0")).ConvertToShort();
-                            eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
-
-                            int startAdress = 258; // Adresa UDT
-                            int sizeInBytes = 78; // Veľkosť UDT v bajtoch
-                            int numberDB = 189; // Cislo DB blocku v plc
-
-                            //Scan multiply
-                            var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
-                            //basic info
-                            eqcModel.MachineAuto = udtData[0].SelectBit(0);
-                            eqcModel.ConveyorOK = udtData[0].SelectBit(1);
-                            eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
-                            eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
-                            eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
-                            //tool
-                            eqcModel.ToolHome = udtData[12].SelectBit(0);
-                            eqcModel.HeaterOk = udtData[12].SelectBit(1);
-                            eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
-                            //bluemelt gluestation
-                            eqcModel.BluemeltOk = udtData[17].SelectBit(0);
-                            eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
-
-                            eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
-                            eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
-
-                            eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
-                            eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
-
-                            eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
-
-                            eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
-                            eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
-                            eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
-                            //Robot
-                            eqcModel.RobotAutomaticMode = udtData[74].SelectBit(0);
-                            eqcModel.RobotRunning = udtData[74].SelectBit(1);
-                            eqcModel.RobotHome = udtData[74].SelectBit(2);
-                            eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
-                            eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
-
-                            // WRITE TO DB
                             await _context.EqcDatas_eqc4.AddAsync(eqcModel);
                             await _context.SaveChangesAsync();
                         }
@@ -356,9 +328,9 @@ namespace api.Repository.DataToDb
             return eqcModel;
         }
 
-        public async Task<EqcModel> GetLiveDataToDb_eqc5()
+        public async Task<Db_eqc5Model> GetLiveDataToDb_eqc5()
         {
-            var eqcModel = new EqcModel();
+            var eqcModel = new Db_eqc5Model();
             try
             {
                 using (var plc = new Plc(CpuType.S71500, _ipAddress_eqc5, 0, 1))
@@ -366,64 +338,56 @@ namespace api.Repository.DataToDb
                     plc.Open();
                     if (plc.IsConnected)
                     {
+                        //actuall time
+                        DateTime currentDate = DateTime.Now;
+                        string formattedDate = currentDate.ToString("dd.MM.yyyy");
+
+                        eqcModel.connection = formattedDate; //shot actual time
+                        eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
+
+                        int startAdress = 258; // Adresa UDT
+                        int sizeInBytes = 78; // Veľkosť UDT v bajtoch
+                        int numberDB = 189; // Cislo DB blocku v plc
+
+                        //Scan multiply
+                        var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
+                        //basic info
+                        eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
+                        eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
+                        eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
+                        //tool
+                        eqcModel.HeaterOk = udtData[12].SelectBit(1);
+                        eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
+                        //bluemelt gluestation
+                        eqcModel.BluemeltOk = udtData[17].SelectBit(0);
+                        eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
+
+                        eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
+                        eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
+
+                        eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
+                        eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
+
+                        eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
+
+                        eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
+                        eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
+                        eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
+                        //Robot
+                        eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
+                        eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
+
+                        // WRITE TO DB
                         if (eqcModel.MainStepNumber == 15)
                         {
-                            //actuall time
-                            DateTime currentDate = DateTime.Now;
-                            string formattedDate = currentDate.ToString("dd.MM.yyyy");
-
-                            eqcModel.connection = formattedDate; //shot actual time
-                            eqcModel.actualDowntime = ((ushort)await plc.ReadAsync("DB189.DBW0.0")).ConvertToShort();
-                            eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
-
-                            int startAdress = 258; // Adresa UDT
-                            int sizeInBytes = 78; // Veľkosť UDT v bajtoch
-                            int numberDB = 189; // Cislo DB blocku v plc
-
-                            //Scan multiply
-                            var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
-                            //basic info
-                            eqcModel.MachineAuto = udtData[0].SelectBit(0);
-                            eqcModel.ConveyorOK = udtData[0].SelectBit(1);
-                            eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
-                            eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
-                            eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
-                            //tool
-                            eqcModel.ToolHome = udtData[12].SelectBit(0);
-                            eqcModel.HeaterOk = udtData[12].SelectBit(1);
-                            eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
-                            //bluemelt gluestation
-                            eqcModel.BluemeltOk = udtData[17].SelectBit(0);
-                            eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
-
-                            eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
-                            eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
-
-                            eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
-                            eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
-
-                            eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
-
-                            eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
-                            eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
-                            eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
-                            //Robot
-                            eqcModel.RobotAutomaticMode = udtData[74].SelectBit(0);
-                            eqcModel.RobotRunning = udtData[74].SelectBit(1);
-                            eqcModel.RobotHome = udtData[74].SelectBit(2);
-                            eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
-                            eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
-
-                            // WRITE TO DB
                             await _context.EqcDatas_eqc5.AddAsync(eqcModel);
                             await _context.SaveChangesAsync();
                         }
-
                     }
                     else
                     {
@@ -438,9 +402,9 @@ namespace api.Repository.DataToDb
             return eqcModel;
         }
 
-        public async Task<EqcModel> GetLiveDataToDb_eqc6()
+        public async Task<Db_eqc6Model> GetLiveDataToDb_eqc6()
         {
-            var eqcModel = new EqcModel();
+            var eqcModel = new Db_eqc6Model();
             try
             {
                 using (var plc = new Plc(CpuType.S71500, _ipAddress_eqc6, 0, 1))
@@ -448,64 +412,56 @@ namespace api.Repository.DataToDb
                     plc.Open();
                     if (plc.IsConnected)
                     {
+                        //actuall time
+                        DateTime currentDate = DateTime.Now;
+                        string formattedDate = currentDate.ToString("dd.MM.yyyy");
+
+                        eqcModel.connection = formattedDate; //shot actual time
+                        eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
+
+                        int startAdress = 258; // Adresa UDT
+                        int sizeInBytes = 78; // Veľkosť UDT v bajtoch
+                        int numberDB = 189; // Cislo DB blocku v plc
+
+                        //Scan multiply
+                        var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
+                        //basic info
+                        eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
+                        eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
+                        eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
+                        //tool
+                        eqcModel.HeaterOk = udtData[12].SelectBit(1);
+                        eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
+                        //bluemelt gluestation
+                        eqcModel.BluemeltOk = udtData[17].SelectBit(0);
+                        eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
+
+                        eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
+                        eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
+
+                        eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
+                        eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
+
+                        eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
+
+                        eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
+                        eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
+                        eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
+                        //Robot
+                        eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
+                        eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
+
+                        // WRITE TO DB
                         if (eqcModel.MainStepNumber == 15)
                         {
-                            //actuall time
-                            DateTime currentDate = DateTime.Now;
-                            string formattedDate = currentDate.ToString("dd.MM.yyyy");
-
-                            eqcModel.connection = formattedDate; //shot actual time
-                            eqcModel.actualDowntime = ((ushort)await plc.ReadAsync("DB189.DBW0.0")).ConvertToShort();
-                            eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
-
-                            int startAdress = 258; // Adresa UDT
-                            int sizeInBytes = 78; // Veľkosť UDT v bajtoch
-                            int numberDB = 189; // Cislo DB blocku v plc
-
-                            //Scan multiply
-                            var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
-                            //basic info
-                            eqcModel.MachineAuto = udtData[0].SelectBit(0);
-                            eqcModel.ConveyorOK = udtData[0].SelectBit(1);
-                            eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
-                            eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
-                            eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
-                            //tool
-                            eqcModel.ToolHome = udtData[12].SelectBit(0);
-                            eqcModel.HeaterOk = udtData[12].SelectBit(1);
-                            eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
-                            //bluemelt gluestation
-                            eqcModel.BluemeltOk = udtData[17].SelectBit(0);
-                            eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
-
-                            eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
-                            eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
-
-                            eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
-                            eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
-
-                            eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
-
-                            eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
-                            eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
-                            eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
-                            //Robot
-                            eqcModel.RobotAutomaticMode = udtData[74].SelectBit(0);
-                            eqcModel.RobotRunning = udtData[74].SelectBit(1);
-                            eqcModel.RobotHome = udtData[74].SelectBit(2);
-                            eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
-                            eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
-
-                            // WRITE TO DB
                             await _context.EqcDatas_eqc6.AddAsync(eqcModel);
                             await _context.SaveChangesAsync();
                         }
-
                     }
                     else
                     {
@@ -520,9 +476,9 @@ namespace api.Repository.DataToDb
             return eqcModel;
         }
 
-        public async Task<EqcModel> GetLiveDataToDb_eqc7()
+        public async Task<Db_eqc7Model> GetLiveDataToDb_eqc7()
         {
-            var eqcModel = new EqcModel();
+            var eqcModel = new Db_eqc7Model();
             try
             {
                 using (var plc = new Plc(CpuType.S71500, _ipAddress_eqc7, 0, 1))
@@ -530,60 +486,53 @@ namespace api.Repository.DataToDb
                     plc.Open();
                     if (plc.IsConnected)
                     {
+                        //actuall time
+                        DateTime currentDate = DateTime.Now;
+                        string formattedDate = currentDate.ToString("dd.MM.yyyy");
+
+                        eqcModel.connection = formattedDate; //shot actual time
+                        eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
+
+                        int startAdress = 258; // Adresa UDT
+                        int sizeInBytes = 78; // Veľkosť UDT v bajtoch
+                        int numberDB = 189; // Cislo DB blocku v plc
+
+                        //Scan multiply
+                        var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
+                        //basic info
+                        eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
+                        eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
+                        eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
+                        //tool
+                        eqcModel.HeaterOk = udtData[12].SelectBit(1);
+                        eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
+                        //bluemelt gluestation
+                        eqcModel.BluemeltOk = udtData[17].SelectBit(0);
+                        eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
+
+                        eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
+                        eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
+
+                        eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
+                        eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
+
+                        eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
+
+                        eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
+                        eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
+                        eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
+                        //Robot
+                        eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
+                        eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
+
+                        // WRITE TO DB
                         if (eqcModel.MainStepNumber == 15)
                         {
-                            //actuall time
-                            DateTime currentDate = DateTime.Now;
-                            string formattedDate = currentDate.ToString("dd.MM.yyyy");
-
-                            eqcModel.connection = formattedDate; //shot actual time
-                            eqcModel.actualDowntime = ((ushort)await plc.ReadAsync("DB189.DBW0.0")).ConvertToShort();
-                            eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
-
-                            int startAdress = 258; // Adresa UDT
-                            int sizeInBytes = 78; // Veľkosť UDT v bajtoch
-                            int numberDB = 189; // Cislo DB blocku v plc
-
-                            //Scan multiply
-                            var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
-                            //basic info
-                            eqcModel.MachineAuto = udtData[0].SelectBit(0);
-                            eqcModel.ConveyorOK = udtData[0].SelectBit(1);
-                            eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
-                            eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
-                            eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
-                            //tool
-                            eqcModel.ToolHome = udtData[12].SelectBit(0);
-                            eqcModel.HeaterOk = udtData[12].SelectBit(1);
-                            eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
-                            //bluemelt gluestation
-                            eqcModel.BluemeltOk = udtData[17].SelectBit(0);
-                            eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
-
-                            eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
-                            eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
-
-                            eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
-                            eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
-
-                            eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
-
-                            eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
-                            eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
-                            eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
-                            //Robot
-                            eqcModel.RobotAutomaticMode = udtData[74].SelectBit(0);
-                            eqcModel.RobotRunning = udtData[74].SelectBit(1);
-                            eqcModel.RobotHome = udtData[74].SelectBit(2);
-                            eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
-                            eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
-
-                            // WRITE TO DB
                             await _context.EqcDatas_eqc7.AddAsync(eqcModel);
                             await _context.SaveChangesAsync();
                         }
@@ -603,9 +552,9 @@ namespace api.Repository.DataToDb
             return eqcModel;
         }
 
-        public async Task<EqcModel> GetLiveDataToDb_eqc8()
+        public async Task<Db_eqc8Model> GetLiveDataToDb_eqc8()
         {
-            var eqcModel = new EqcModel();
+            var eqcModel = new Db_eqc8Model();
             try
             {
                 using (var plc = new Plc(CpuType.S71500, _ipAddress_eqc8, 0, 1))
@@ -613,60 +562,53 @@ namespace api.Repository.DataToDb
                     plc.Open();
                     if (plc.IsConnected)
                     {
+                        //actuall time
+                        DateTime currentDate = DateTime.Now;
+                        string formattedDate = currentDate.ToString("dd.MM.yyyy");
+
+                        eqcModel.connection = formattedDate; //shot actual time
+                        eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
+
+                        int startAdress = 258; // Adresa UDT
+                        int sizeInBytes = 78; // Veľkosť UDT v bajtoch
+                        int numberDB = 189; // Cislo DB blocku v plc
+
+                        //Scan multiply
+                        var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
+                        //basic info
+                        eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
+                        eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
+                        eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
+                        //tool
+                        eqcModel.HeaterOk = udtData[12].SelectBit(1);
+                        eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
+                        //bluemelt gluestation
+                        eqcModel.BluemeltOk = udtData[17].SelectBit(0);
+                        eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
+
+                        eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
+                        eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
+
+                        eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
+                        eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
+
+                        eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
+                        eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
+
+                        eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
+                        eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
+                        eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
+                        eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
+                        //Robot
+                        eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
+                        eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
+
+                        // WRITE TO DB
                         if (eqcModel.MainStepNumber == 15)
                         {
-                            //actuall time
-                            DateTime currentDate = DateTime.Now;
-                            string formattedDate = currentDate.ToString("dd.MM.yyyy");
-
-                            eqcModel.connection = formattedDate; //shot actual time
-                            eqcModel.actualDowntime = ((ushort)await plc.ReadAsync("DB189.DBW0.0")).ConvertToShort();
-                            eqcModel.ActualToolName = plc.Read(DataType.DataBlock, 189, 2, VarType.String, 20).ToString();
-
-                            int startAdress = 258; // Adresa UDT
-                            int sizeInBytes = 78; // Veľkosť UDT v bajtoch
-                            int numberDB = 189; // Cislo DB blocku v plc
-
-                            //Scan multiply
-                            var udtData = await plc.ReadBytesAsync(DataType.DataBlock, numberDB, startAdress, sizeInBytes);
-                            //basic info
-                            eqcModel.MachineAuto = udtData[0].SelectBit(0);
-                            eqcModel.ConveyorOK = udtData[0].SelectBit(1);
-                            eqcModel.MainStepNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(2).Take(2).ToArray());
-                            eqcModel.CycleTime = S7.Net.Types.DInt.FromByteArray(udtData.Skip(4).Take(4).ToArray()) / 10;
-                            eqcModel.ProductionCurrentNum = S7.Net.Types.DInt.FromByteArray(udtData.Skip(8).Take(4).ToArray());
-                            //tool
-                            eqcModel.ToolHome = udtData[12].SelectBit(0);
-                            eqcModel.HeaterOk = udtData[12].SelectBit(1);
-                            eqcModel.ToolNumber = S7.Net.Types.Word.FromByteArray(udtData.Skip(14).Take(2).ToArray());
-                            //bluemelt gluestation
-                            eqcModel.BluemeltOk = udtData[17].SelectBit(0);
-                            eqcModel.ActualPressure = S7.Net.Types.Real.FromByteArray(udtData.Skip(18).Take(4).ToArray());
-
-                            eqcModel.SetAirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(22).Take(4).ToArray());
-                            eqcModel.SetAirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(26).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(30).Take(4).ToArray());
-
-                            eqcModel.SetAirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(34).Take(4).ToArray());
-                            eqcModel.SetAirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(38).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(42).Take(4).ToArray());
-
-                            eqcModel.SetAirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(46).Take(4).ToArray());
-                            eqcModel.SetpumpSpeed3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(50).Take(4).ToArray());
-
-                            eqcModel.Actual_AirInside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(54).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside1 = S7.Net.Types.Real.FromByteArray(udtData.Skip(58).Take(4).ToArray());
-                            eqcModel.Actual_AirInside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(62).Take(4).ToArray());
-                            eqcModel.Actual_AirOutside2 = S7.Net.Types.Real.FromByteArray(udtData.Skip(66).Take(4).ToArray());
-                            eqcModel.Actual_AirInside3 = S7.Net.Types.Real.FromByteArray(udtData.Skip(70).Take(4).ToArray());
-                            //Robot
-                            eqcModel.RobotAutomaticMode = udtData[74].SelectBit(0);
-                            eqcModel.RobotRunning = udtData[74].SelectBit(1);
-                            eqcModel.RobotHome = udtData[74].SelectBit(2);
-                            eqcModel.RobotConnectedGripper = udtData[74].SelectBit(3);
-                            eqcModel.RobotToolNumber = S7.Net.Types.Int.FromByteArray(udtData.Skip(76).Take(2).ToArray());
-
-                            // WRITE TO DB
                             await _context.EqcDatas_eqc8.AddAsync(eqcModel);
                             await _context.SaveChangesAsync();
                         }
