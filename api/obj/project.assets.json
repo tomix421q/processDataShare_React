@@ -4503,23 +4503,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\TomasZilka\\.nuget\\packages\\": {},
+    "C:\\Users\\uzilt001\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\TomasZilka\\Desktop\\processDataShare_React\\api\\api.csproj",
+      "projectUniqueName": "C:\\Users\\uzilt001\\Desktop\\processDataShare\\processDataShare_React\\api\\api.csproj",
       "projectName": "api",
-      "projectPath": "C:\\Users\\TomasZilka\\Desktop\\processDataShare_React\\api\\api.csproj",
-      "packagesPath": "C:\\Users\\TomasZilka\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\TomasZilka\\Desktop\\processDataShare_React\\api\\obj\\",
+      "projectPath": "C:\\Users\\uzilt001\\Desktop\\processDataShare\\processDataShare_React\\api\\api.csproj",
+      "packagesPath": "C:\\Users\\uzilt001\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\uzilt001\\Desktop\\processDataShare\\processDataShare_React\\api\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\TomasZilka\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\uzilt001\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -4589,7 +4589,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.100/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.101/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
