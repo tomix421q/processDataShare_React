@@ -47,8 +47,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors(builder =>
+{
+    builder.WithOrigins("http://localhost:5173")
+           .AllowAnyHeader()
+           .AllowAnyMethod()
+           .AllowCredentials();
+}); ;
 
 
+app.UseCors("CorsPolicy");
 app.UseHttpsRedirection();
 app.MapControllers();
 app.Run();
